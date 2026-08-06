@@ -1,20 +1,23 @@
-# gem.py - the ONE place that talks to the class proxy.
-from google import genai
+# gem.py - talks to the class proxy using direct HTTP calls
 import requests
 import config
 
-# --- Chat (uses the SDK) ---
-_chat_client = genai.Client(
-    api_key=config.GEMINI_API_KEY,
-    http_options={"base_url": config.PROXY_BASE},
-)
 
 def chat(prompt: str) -> str:
-    r = _chat_client.models.generate_content(model=config.CHAT_MODEL, contents=prompt)
-    return (r.text or "").strip()
+    url = "https://saidazam-litellm-proxy.hf.space/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {config.GEMINI_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    body = {
+        "model": "gemini-flash-lite",
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    r = requests.post(url, headers=headers, json=body)
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"]["content"].strip()
 
 
-# --- Embed (calls the proxy directly to avoid SDK routing issues) ---
 def embed(text: str):
     url = "https://saidazam-litellm-proxy.hf.space/v1/embeddings"
     headers = {
