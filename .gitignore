@@ -1,9 +1,0 @@
-.env
-qdrant_data/
-venv/
-.venv/
-__pycache__/
-*.pyc
-.pytest_cache/
-docs/*.pdf
-!docs/loan_terms.pdf
