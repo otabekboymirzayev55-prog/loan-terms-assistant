@@ -1,6 +1,21 @@
-# gem.py - talks to the class proxy using direct HTTP calls
+# gem.py - talks to the class proxy with retry on rate limit
+import time
 import requests
 import config
+
+
+def _post_with_retry(url, headers, body, retries=5):
+    """Retry up to 5 times if we hit a rate limit (429)."""
+    for attempt in range(retries):
+        r = requests.post(url, headers=headers, json=body)
+        if r.status_code == 429:
+            wait = 10 * (attempt + 1)  # wait 10s, 20s, 30s ...
+            print(f"Rate limited. Waiting {wait}s before retry {attempt + 1}/{retries}...")
+            time.sleep(wait)
+            continue
+        r.raise_for_status()
+        return r
+    raise RuntimeError("Too many retries — proxy is busy. Try again in a minute.")
 
 
 def chat(prompt: str) -> str:
@@ -13,8 +28,7 @@ def chat(prompt: str) -> str:
         "model": "gemini-flash-lite",
         "messages": [{"role": "user", "content": prompt}],
     }
-    r = requests.post(url, headers=headers, json=body)
-    r.raise_for_status()
+    r = _post_with_retry(url, headers, body)
     return r.json()["choices"][0]["message"]["content"].strip()
 
 
@@ -28,6 +42,6 @@ def embed(text: str):
         "model": "gemini-embedding",
         "input": text,
     }
-    r = requests.post(url, headers=headers, json=body)
-    r.raise_for_status()
+    time.sleep(0.5)  # small pause between every embed call
+    r = _post_with_retry(url, headers, body)
     return r.json()["data"][0]["embedding"]
