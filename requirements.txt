@@ -1,0 +1,5 @@
+google-genai
+gradio
+pypdf
+python-dotenv
+qdrant-client
