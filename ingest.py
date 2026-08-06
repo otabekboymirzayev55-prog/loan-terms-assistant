@@ -1,5 +1,4 @@
 from pathlib import Path
-import shutil
 
 from pypdf import PdfReader
 from qdrant_client import QdrantClient
@@ -29,10 +28,7 @@ def resolve_pdf_path() -> Path:
     candidates = [config.PDF_PATH, config.ROOT_PDF_PATH]
     for candidate in candidates:
         if candidate.exists():
-            config.DOCS_DIR.mkdir(parents=True, exist_ok=True)
-            if candidate != config.PDF_PATH:
-                shutil.copyfile(candidate, config.PDF_PATH)
-            return config.PDF_PATH
+            return candidate
 
     raise FileNotFoundError(
         "Missing PDF. Add the chosen loan document as docs/loan_terms.pdf "
