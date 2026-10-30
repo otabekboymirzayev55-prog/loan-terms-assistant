@@ -46,18 +46,10 @@ def main():
 
     if not chunks:
         raise ValueError("The PDF contains no extractable text")
-    dim = len(embed("dimension probe"))
-    print(f"Embedding size = {dim}")
-
     client = make_client()
     try:
         if client.collection_exists(config.COLLECTION):
             raise RuntimeError("This Google index already exists. Set a new GOOGLE_INDEX_VERSION to rebuild without overwriting it.")
-        client.create_collection(
-            collection_name=config.COLLECTION,
-            vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
-        )
-
         points = []
         for i, chunk in enumerate(chunks):
             points.append(
@@ -72,6 +64,15 @@ def main():
                 )
             )
 
+        # Finish provider calls before creating the collection so a failed
+        # embedding request does not leave an empty index behind.
+        dim = len(points[0].vector)
+        if any(len(point.vector) != dim for point in points):
+            raise ValueError("Embedding dimensions are inconsistent")
+        client.create_collection(
+            collection_name=config.COLLECTION,
+            vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
+        )
         client.upsert(collection_name=config.COLLECTION, points=points)
         print(f"Stored {len(points)} clauses in Qdrant. The document is ready.")
     finally:

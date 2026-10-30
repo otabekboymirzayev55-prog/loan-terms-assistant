@@ -1,3 +1,4 @@
+import os
 import gradio as gr
 
 from agent import ask
@@ -26,4 +27,4 @@ demo = gr.ChatInterface(
 
 if __name__ == "__main__":
     demo.queue()
-    demo.launch(server_name="0.0.0.0")
+    demo.launch(server_name=os.getenv("GRADIO_SERVER_NAME", "127.0.0.1"), server_port=int(os.getenv("PORT", os.getenv("GRADIO_SERVER_PORT", "7860"))))

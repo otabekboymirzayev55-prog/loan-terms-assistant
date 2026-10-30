@@ -13,8 +13,23 @@ import verify
 import gem
 import ingest
 import agent
+import store
 
 class LoanTests(unittest.TestCase):
+    def test_failed_embedding_does_not_create_empty_index(self):
+        client = Mock()
+        client.collection_exists.return_value = False
+        with patch.object(ingest, 'resolve_pdf_path', return_value=Path('test.pdf')), patch.object(ingest, 'load_chunks', return_value=[{'text':'clause', 'page':1}]), patch.object(ingest, 'make_client', return_value=client), patch.object(ingest, 'embed', side_effect=RuntimeError('provider unavailable')):
+            with self.assertRaises(RuntimeError): ingest.main()
+        client.create_collection.assert_not_called()
+        client.upsert.assert_not_called()
+        client.close.assert_called_once()
+
+    def test_explicit_local_storage_does_not_contact_cloud(self):
+        with patch.dict(os.environ, {'QDRANT_STORAGE':'local'}), patch.object(config, 'QDRANT_URL', 'https://example.invalid'), patch.object(store, 'QdrantClient') as client:
+            store.make_client()
+            client.assert_called_once_with(path=str(config.QDRANT_PATH))
+
     def test_only_direct_key_and_official_endpoint(self):
         with patch.object(config, 'GOOGLE_API_KEY', None), patch.object(gem.requests, 'post') as post:
             with self.assertRaises(RuntimeError): gem.chat('test')
