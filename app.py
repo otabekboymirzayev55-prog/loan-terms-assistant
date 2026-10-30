@@ -6,8 +6,8 @@ from agent import ask
 def respond(message, history):
     try:
         return ask(message)
-    except Exception as exc:
-        return f"Error: {exc}"
+    except Exception:
+        return "The document service is unavailable. Please try again later."
 
 
 demo = gr.ChatInterface(

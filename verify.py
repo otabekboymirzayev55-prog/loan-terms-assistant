@@ -23,4 +23,4 @@ def is_grounded(answer, chunks) -> bool:
 
     context = "\n\n".join(c["text"] for c in chunks)
     verdict = chat(VERIFY_PROMPT.format(context=context, answer=answer)).strip().upper()
-    return "NOT_GROUNDED" not in verdict
+    return verdict == "GROUNDED"

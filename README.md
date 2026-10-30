@@ -13,7 +13,7 @@ This project is a scoped AI assistant that answers questions about one real bank
 
 ## Setup
 
-1. Create a `.env` file in the project root with the mentor-provided key, or add `GEMINI_API_KEY` as a Hugging Face secret:
+1. Create a `.env` file in the project root with the provider API key, or add `GEMINI_API_KEY` as a Hugging Face secret:
 
 ```env
 GEMINI_API_KEY=your_key_here

@@ -1,4 +1,4 @@
-google-genai
+requests>=2.31,<3
 gradio
 pypdf
 python-dotenv

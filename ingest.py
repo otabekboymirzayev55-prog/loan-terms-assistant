@@ -6,10 +6,13 @@ from qdrant_client.models import Distance, PointStruct, VectorParams
 
 import config
 from gem import embed
+from store import make_client
 
 
 def load_chunks(pdf_path: Path, size: int = 900, overlap: int = 150):
     """Read the PDF and cut each page into small overlapping pieces."""
+    if size <= 0 or overlap < 0 or overlap >= size:
+        raise ValueError("Require size > overlap >= 0")
     reader = PdfReader(str(pdf_path))
     chunks = []
     for page_no, page in enumerate(reader.pages, start=1):
@@ -25,9 +28,9 @@ def load_chunks(pdf_path: Path, size: int = 900, overlap: int = 150):
 
 
 def resolve_pdf_path() -> Path:
-    candidates = [config.PDF_PATH, config.ROOT_PDF_PATH]
+    candidates = [config.PDF_PATH, config.ROOT_PDF_PATH, config.DOCS_DIR]
     for candidate in candidates:
-        if candidate.exists():
+        if candidate.is_file():
             return candidate
 
     raise FileNotFoundError(
@@ -41,10 +44,12 @@ def main():
     chunks = load_chunks(pdf_path)
     print(f"Loaded {len(chunks)} chunks from {pdf_path}")
 
+    if not chunks:
+        raise ValueError("The PDF contains no extractable text")
     dim = len(embed("dimension probe"))
     print(f"Embedding size = {dim}")
 
-    client = QdrantClient(path=str(config.QDRANT_PATH))
+    client = make_client()
     try:
         client.recreate_collection(
             collection_name=config.COLLECTION,

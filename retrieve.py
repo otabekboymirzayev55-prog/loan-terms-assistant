@@ -2,10 +2,11 @@ from qdrant_client import QdrantClient
 
 import config
 from gem import embed
+from store import make_client
 
 
 def _client():
-    return QdrantClient(path=str(config.QDRANT_PATH))
+    return make_client()
 
 
 def search(question: str, k: int = config.TOP_K):

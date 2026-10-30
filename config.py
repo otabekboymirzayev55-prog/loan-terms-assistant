@@ -16,15 +16,17 @@ if not GEMINI_API_KEY:
 IS_SPACE = bool(os.getenv("SPACE_ID") or os.getenv("SPACE_REPOSITORY"))
 
 # All model calls go through the class proxy.
-PROXY_BASE = "https://saidazam-litellm-proxy.hf.space/gemini"
+PROXY_BASE = os.getenv("PROXY_BASE_URL", "https://saidazam-litellm-proxy.hf.space/v1").rstrip("/")
 
 # The proxy only allows these two models.
-CHAT_MODEL  = "gemini-flash-lite"
+CHAT_MODEL = os.getenv("CHAT_MODEL", "gemini-flash-lite")
 EMBED_MODEL = "gemini-embedding"
 
 # Local storage.
 QDRANT_PATH = BASE_DIR / "qdrant_data"
 COLLECTION = "loan_terms"
+QDRANT_URL = os.getenv("QDRANT_URL")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 
 # The chosen bank document.
 DOCS_DIR = BASE_DIR / "docs"
