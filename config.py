@@ -7,24 +7,22 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    GEMINI_API_KEY = os.getenv("HF_SECRET_GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise RuntimeError("GEMINI_API_KEY is missing. Add it as a secret or in .env.")
-
+# A direct Google AI Studio key. Old proxy credentials are deliberately ignored.
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+CHAT_MODEL = os.getenv("GOOGLE_CHAT_MODEL", "gemini-3.5-flash-lite")
+EMBED_MODEL = os.getenv("GOOGLE_EMBED_MODEL", "gemini-embedding-001")
+INDEX_VERSION = os.getenv("GOOGLE_INDEX_VERSION", "v1")
 IS_SPACE = bool(os.getenv("SPACE_ID") or os.getenv("SPACE_REPOSITORY"))
 
-# All model calls go through the class proxy.
-PROXY_BASE = os.getenv("PROXY_BASE_URL", "https://saidazam-litellm-proxy.hf.space/v1").rstrip("/")
-
-# The proxy only allows these two models.
-CHAT_MODEL = os.getenv("CHAT_MODEL", "gemini-flash-lite")
-EMBED_MODEL = "gemini-embedding"
+def require_google_key():
+    if not GOOGLE_API_KEY:
+        raise RuntimeError("GOOGLE_API_KEY is missing. Add a Google AI Studio key to the server environment.")
+    return GOOGLE_API_KEY
 
 # Local storage.
 QDRANT_PATH = BASE_DIR / "qdrant_data"
-COLLECTION = "loan_terms"
+COLLECTION = "loan_terms_google_" + EMBED_MODEL.replace("-", "_") + "_" + INDEX_VERSION
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 

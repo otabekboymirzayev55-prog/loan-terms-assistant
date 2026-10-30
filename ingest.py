@@ -51,7 +51,9 @@ def main():
 
     client = make_client()
     try:
-        client.recreate_collection(
+        if client.collection_exists(config.COLLECTION):
+            raise RuntimeError("This Google index already exists. Set a new GOOGLE_INDEX_VERSION to rebuild without overwriting it.")
+        client.create_collection(
             collection_name=config.COLLECTION,
             vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
         )

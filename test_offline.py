@@ -1,6 +1,6 @@
 """Offline regressions: no provider calls and no production index writes."""
 import os
-os.environ.setdefault('GEMINI_API_KEY', 'offline-test-placeholder')
+os.environ.setdefault('GOOGLE_API_KEY', 'offline-test-placeholder')
 import tempfile
 from pathlib import Path
 import unittest
@@ -15,6 +15,30 @@ import ingest
 import agent
 
 class LoanTests(unittest.TestCase):
+    def test_only_direct_key_and_official_endpoint(self):
+        with patch.object(config, 'GOOGLE_API_KEY', None), patch.object(gem.requests, 'post') as post:
+            with self.assertRaises(RuntimeError): gem.chat('test')
+            post.assert_not_called()
+        response = Mock()
+        response.json.return_value = {'choices':[{'message':{'content':'OK'}}]}
+        with patch.object(config, 'GOOGLE_API_KEY', 'test-google-key'), patch.object(gem, '_post_with_retry', return_value=response) as post:
+            self.assertEqual(gem.chat('test'), 'OK')
+            url, headers, body = post.call_args.args
+            self.assertEqual(url, 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions')
+            self.assertEqual(headers['Authorization'], 'Bearer test-google-key')
+            self.assertEqual(body['model'], 'gemini-3.5-flash-lite')
+
+    def test_embedding_contract_and_separate_collection(self):
+        response = Mock()
+        response.json.return_value = {'data':[{'embedding':[0.1,0.2]}]}
+        with patch.object(config, 'GOOGLE_API_KEY', 'test-google-key'), patch.object(gem, '_post_with_retry', return_value=response) as post:
+            self.assertEqual(gem.embed('text'), [0.1,0.2])
+            url, headers, body = post.call_args.args
+            self.assertTrue(url.endswith('/openai/embeddings'))
+            self.assertEqual(body['model'], 'gemini-embedding-001')
+            self.assertEqual(body['input'], 'text')
+        self.assertTrue(config.COLLECTION.startswith('loan_terms_google_'))
+
     def test_refusal_does_not_touch_index(self):
         with patch.object(agent, 'is_in_scope', return_value=False), patch.object(agent, 'ensure_index') as ensure:
             self.assertEqual(agent.ask('Write a poem'), agent.REFUSAL)
