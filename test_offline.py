@@ -12,8 +12,21 @@ import retrieve
 import verify
 import gem
 import ingest
+import agent
 
 class LoanTests(unittest.TestCase):
+    def test_refusal_does_not_touch_index(self):
+        with patch.object(agent, 'is_in_scope', return_value=False), patch.object(agent, 'ensure_index') as ensure:
+            self.assertEqual(agent.ask('Write a poem'), agent.REFUSAL)
+            ensure.assert_not_called()
+
+    def test_missing_index_never_triggers_ingestion(self):
+        client=Mock()
+        client.collection_exists.return_value=False
+        with patch.object(agent, 'make_client', return_value=client), patch.object(agent.ingest, 'main') as ingest_main:
+            with self.assertRaises(RuntimeError): agent.ensure_index()
+            ingest_main.assert_not_called()
+
     def test_grounding_fails_closed(self):
         for verdict, expected in [('GROUNDED', True), ('NOT_GROUNDED', False), ('maybe', False), ('', False)]:
             with patch.object(verify, 'chat', return_value=verdict):

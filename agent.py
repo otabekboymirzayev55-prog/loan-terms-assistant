@@ -1,7 +1,7 @@
 from answer import write_answer
 from guard import is_in_scope
 import config
-from qdrant_client import QdrantClient
+from store import make_client
 import ingest
 from retrieve import search
 from verify import is_grounded
@@ -11,21 +11,22 @@ REFUSAL = "I can only answer questions about this loan product's terms and condi
 
 
 def ensure_index():
-    client = QdrantClient(path=str(config.QDRANT_PATH))
+    client = make_client()
     try:
         if client.collection_exists(config.COLLECTION):
             return
     finally:
         client.close()
 
-    ingest.main()
+    raise RuntimeError("Document index is missing. Run python ingest.py before starting the service.")
 
 
 def ask(question: str) -> str:
-    ensure_index()
-
+    if not question.strip() or len(question) > 2000:
+        return "Please enter a question between 1 and 2000 characters."
     if not is_in_scope(question):
         return REFUSAL
+    ensure_index()
 
     chunks = search(question)
     draft = write_answer(question, chunks)

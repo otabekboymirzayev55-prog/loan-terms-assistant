@@ -19,4 +19,4 @@ Answer (ALLOW or REFUSE):"""
 
 def is_in_scope(question: str) -> bool:
     output = chat(GUARD_PROMPT.format(scope=config.SCOPE, q=question)).strip().upper()
-    return output.startswith("ALLOW")
+    return output == "ALLOW"
